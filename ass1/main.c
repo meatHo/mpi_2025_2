@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     info.local_ysize = info.ny / info.py;
 
     info.coord_px = rank%info.px;
-    info.coord_py = rank/info.py;
+    info.coord_py = rank/info.px;
 
 
     // printf("rank %d global_x %d global_y %d\n", rank,global_x,global_y);
@@ -98,11 +98,14 @@ int main(int argc, char *argv[]) {
                     int local_ty = y + arr_y[t];
 
                     arr[t] = T_old[local_tx][local_ty];
+                    // if (rank==2&&x==1&&y==2) {
+                    //     printf("localtx %d localty %d arr[t]%f\n",local_tx,local_ty,arr[t]);
+                    // }
                     // printf("local_tx %d local_ty %d global_tx %d global_ty %d arr[t] %f\n",local_tx,local_ty,global_tx,global_ty,arr[t]);
                 }
                 double sum = arr[0] + arr[1] + arr[2] + arr[3];
                 T_new[x][y] = T_old[x][y] + (sum - 4 * T_old[x][y]) * alpha;
-                // printf("rank : %d x %d y %d old %f new %f \n",rank,x,y,T_old[x][y],T_new[x][y]);
+                // printf("rank : %d stemp: %d x %d y %d old %f new %f \n",rank,i,x,y,T_old[x][y],T_new[x][y]);
             }
         }
 

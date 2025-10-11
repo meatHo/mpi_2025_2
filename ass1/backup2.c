@@ -185,3 +185,30 @@ void print_info(struct MPI_info info) {
         printf("\n");
     }
 }
+
+// int min = (info.local_xsize<info.local_ysize)?info.local_xsize:info.local_ysize;
+//
+// //첫 시작 내 안에서만 교환(통신 없는거)
+// for (int i = 0; i < min; ++i) {
+//     for (int x=1; x < info.local_xsize; x++) {
+//         for (int y=1; y < info.local_ysize; y++) {
+//             double arr[4] = {0};//동서남북
+//             for (int t=0; t < 4; t++) {
+//                 int local_tx = x+arr_x[t];
+//                 int local_ty = y+arr_y[t];
+//
+//
+//                 arr[t]=T_old[local_tx][local_ty];
+//
+//             }
+//             double sum = arr[0]+arr[1]+arr[2]+arr[3];
+//             T_new[x][y]=T_old[x][y]+(sum-4*T_old[x][y])*alpha;
+//             // printf("x %d y %d new %f",x,y,T_new[x][y]);
+//         }
+//     }
+//     double **tmp = T_old;
+//     T_old = T_new;
+//     T_new = tmp;
+//     steps--;
+// }
+//

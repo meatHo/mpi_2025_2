@@ -22,13 +22,13 @@ void exchange_bound(int rank, struct MPI_info info, double**T_old) {
     MPI_Status st;
     double *message;
     //통신 시작
-    if (info.coord_px+info.coord_py%2==0) {//짝수 먼저 recv 순서 반대로 하우상좌 뒤에 부터 좌상우하-------------------------------
+    if ((info.coord_px+info.coord_py)%2==0) {//짝수 먼저 recv 순서 반대로 하우상좌 뒤에 부터 좌상우하-------------------------------
         for (int i=3;i>=0;i--) {//recv
             if (!recv_dir[i]) continue;
             int origin_rank=get_origin(i,rank,info);
             int count;
 
-            if (i%2==0) {//상하 일떄 메시지 사이즈
+            if (i%2!=0) {//상하 일떄 메시지 사이즈
                 count = info.local_xsize;
                 message=(double*)malloc(info.local_xsize*sizeof(double));
             }else {//좌우 일때 메시지 사이즈
@@ -89,7 +89,7 @@ void exchange_bound(int rank, struct MPI_info info, double**T_old) {
             int origin_rank=get_origin(i,rank,info);
             int count;
 
-            if (i%2==0) {//상하 일떄 메시지 사이즈
+            if (i%2!=0) {//상하 일떄 메시지 사이즈
                 count = info.local_xsize;
                 message=(double*)malloc(info.local_xsize*sizeof(double));
             }else {//좌우 일때 메시지 사이즈
@@ -168,31 +168,60 @@ void read_message(int i, struct MPI_info info, double **T_old, double *message) 
     }
 }
 
+// void insulate(struct MPI_info info, double **T_old) {
+//     int nx = info.local_xsize;
+//     int ny = info.local_ysize;
+//
+//     if (!send_dir[0]) {//상
+//         for (int j = 1; j <= ny; j++) {
+//             T_old[0][j] = T_old[1][j];
+//         }
+//     }
+//
+//     if (!send_dir[1]) {//좌
+//         for (int i = 1; i <= nx; i++) {
+//             T_old[i][0] = T_old[i][1];
+//         }
+//     }
+//
+//     if (!send_dir[2]) {//하
+//         for (int j = 1; j <= ny; j++) {
+//             T_old[nx + 1][j] = T_old[nx][j];
+//         }
+//     }
+//
+//     if (!send_dir[3]) {//우
+//         for (int i = 1; i <= nx; i++) {
+//             T_old[i][ny + 1] = T_old[i][ny];
+//         }
+//     }
+// }
+
 void insulate(struct MPI_info info, double **T_old) {
     int nx = info.local_xsize;
     int ny = info.local_ysize;
 
     if (!send_dir[0]) {//상
-        for (int j = 1; j <= ny; j++) {
-            T_old[0][j] = T_old[1][j];
+        for (int j = 1; j <= nx; j++) {
+            T_old[j][0] = T_old[j][1];
         }
     }
 
     if (!send_dir[1]) {//좌
-        for (int i = 1; i <= nx; i++) {
-            T_old[i][0] = T_old[i][1];
+        for (int i = 1; i <= ny; i++) {
+            T_old[0][i] = T_old[1][i];
         }
     }
 
     if (!send_dir[2]) {//하
-        for (int j = 1; j <= ny; j++) {
-            T_old[nx + 1][j] = T_old[nx][j];
+        for (int j = 1; j <= nx; j++) {
+            T_old[j][nx + 1] = T_old[j][nx];
         }
     }
 
     if (!send_dir[3]) {//우
-        for (int i = 1; i <= nx; i++) {
-            T_old[i][ny + 1] = T_old[i][ny];
+        for (int i = 1; i <= ny; i++) {
+            T_old[ny + 1][i] = T_old[ny][i];
         }
     }
 }
@@ -215,6 +244,7 @@ void check_bound(int rank, struct MPI_info info) {
         send_dir[3]=false;
         recv_dir[2]=false;
     }
+    // printf("rank %d, %d %d %d %d\n",rank, send_dir[0],send_dir[1],send_dir[2],send_dir[3]);
 }
 
 int get_dest(int i, int rank, struct MPI_info info) {
@@ -292,12 +322,12 @@ void gather_total_heat(struct MPI_info info, double **T_new, int rank) {
         double recv_val = 0.0;
 
         for (int src = 1; src < size; src++) {
-            MPI_Recv(&recv_val, 1, MPI_DOUBLE, src, 0, MPI_COMM_WORLD, &st);
+            MPI_Recv(&recv_val, 1, MPI_DOUBLE, src, 100, MPI_COMM_WORLD, &st);
             global_sum += recv_val;
         }
 
         printf("\n rank 0 전체 열 합계 %f\n", global_sum);
     } else {
-        MPI_Send(&local_sum, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(&local_sum, 1, MPI_DOUBLE, 0, 100, MPI_COMM_WORLD);
     }
 }
