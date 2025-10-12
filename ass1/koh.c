@@ -310,24 +310,44 @@ void gather_total_heat(struct MPI_info info, double **T_new, int rank) {
     int size = info.px*info.py;
     MPI_Status st;
     double local_sum = 0.0;
+    double max=-1;
 
     for (int i = 1; i <= nx; i++) {
         for (int j = 1; j <= ny; j++) {
             local_sum += T_new[i][j];
+            max=(max>T_new[i][j])?max:T_new[i][j];
         }
     }
 
     if (rank == 0) {
         double global_sum = local_sum;
-        double recv_val = 0.0;
+        // double recv_sum = 0.0;
+        // double recv_max=0.0;
+
+        // for (int src = 1; src < size; src++) {
+        //     MPI_Recv(&recv_sum, 1, MPI_DOUBLE, src, 100, MPI_COMM_WORLD, &st);
+        //     global_sum += recv_sum;
+        // }
+        // for (int src = 1; src < size; src++) {
+        //     MPI_Recv(&recv_max, 1, MPI_DOUBLE, src, 1000, MPI_COMM_WORLD, &st);
+        //     max=(max>recv_max)?max:recv_max;
+        // }
+        struct RES res;
 
         for (int src = 1; src < size; src++) {
-            MPI_Recv(&recv_val, 1, MPI_DOUBLE, src, 100, MPI_COMM_WORLD, &st);
-            global_sum += recv_val;
+            MPI_Recv(&res, 2, MPI_DOUBLE, src, 1000, MPI_COMM_WORLD, &st);
+            global_sum += res.local_sum;
+            max=(max>res.local_max)?max:res.local_max;
         }
 
         printf("\n rank 0 전체 열 합계 %f\n", global_sum);
+        printf(" 전체 max %f\n",max);
     } else {
-        MPI_Send(&local_sum, 1, MPI_DOUBLE, 0, 100, MPI_COMM_WORLD);
+        // MPI_Send(&local_sum, 1, MPI_DOUBLE, 0, 100, MPI_COMM_WORLD);
+        // MPI_Send(&max, 1, MPI_DOUBLE, 0, 1000, MPI_COMM_WORLD);
+        struct RES send_res;
+        send_res.local_sum = local_sum;
+        send_res.local_max = max;
+        MPI_Send(&max, 2, MPI_DOUBLE, 0, 1000, MPI_COMM_WORLD);
     }
 }
