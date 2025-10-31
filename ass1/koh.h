@@ -12,10 +12,10 @@ struct MPI_info {
     int nx, ny, px, py, local_xsize, local_ysize, coord_px, coord_py;
 };
 
-struct RES {
-    double local_sum;
-    double local_max;
-};
+// struct RES {
+//     double local_sum;
+//     double local_max;
+// };
 
 void print_info(struct MPI_info info);
 

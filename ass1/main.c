@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     //발원 초기 위치 설정
     if (rank == 0) {
         //step 0
-        T_new[1][1] = 100.0;
+        // T_new[1][1] = 100.0;
         T_old[1][1] = 100.0;
         // printf("info.localxsize %d",info.local_xsize);
         // printf("info.localysize %d",info.local_ysize);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
     //총합
     // MPI_Barrier(MPI_COMM_WORLD);
-    gather_total_heat(info, T_new, rank);
+    gather_total_heat(info, T_old, rank);
 
 
     //완

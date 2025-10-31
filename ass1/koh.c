@@ -304,7 +304,7 @@ void print_info(struct MPI_info info) {
     }
 }
 
-void gather_total_heat(struct MPI_info info, double **T_new, int rank) {
+void gather_total_heat(struct MPI_info info, double **T_old, int rank) {
     int nx = info.local_xsize;
     int ny = info.local_ysize;
     int size = info.px*info.py;
@@ -314,40 +314,46 @@ void gather_total_heat(struct MPI_info info, double **T_new, int rank) {
 
     for (int i = 1; i <= nx; i++) {
         for (int j = 1; j <= ny; j++) {
-            local_sum += T_new[i][j];
-            max=(max>T_new[i][j])?max:T_new[i][j];
+            local_sum += T_old[i][j];
+            max=(max>T_old[i][j])?max:T_old[i][j];
+            if (T_old[i][j]==0.0) {
+                continue;
+            }
+
+            // printf("rank %d , i %d j %d 값 %f\n",rank,i,j,T_old[i][j]);
         }
     }
 
     if (rank == 0) {
         double global_sum = local_sum;
-        // double recv_sum = 0.0;
-        // double recv_max=0.0;
-
-        // for (int src = 1; src < size; src++) {
-        //     MPI_Recv(&recv_sum, 1, MPI_DOUBLE, src, 100, MPI_COMM_WORLD, &st);
-        //     global_sum += recv_sum;
-        // }
-        // for (int src = 1; src < size; src++) {
-        //     MPI_Recv(&recv_max, 1, MPI_DOUBLE, src, 1000, MPI_COMM_WORLD, &st);
-        //     max=(max>recv_max)?max:recv_max;
-        // }
-        struct RES res;
+        double recv_sum = 0.0;
+        double recv_max=0.0;
 
         for (int src = 1; src < size; src++) {
-            MPI_Recv(&res, 2, MPI_DOUBLE, src, 1000, MPI_COMM_WORLD, &st);
-            global_sum += res.local_sum;
-            max=(max>res.local_max)?max:res.local_max;
+            MPI_Recv(&recv_sum, 1, MPI_DOUBLE, src, 100, MPI_COMM_WORLD, &st);
+            global_sum += recv_sum;
         }
+        for (int src = 1; src < size; src++) {
+            MPI_Recv(&recv_max, 1, MPI_DOUBLE, src, 1000, MPI_COMM_WORLD, &st);
+            max=(max>recv_max)?max:recv_max;
+        }
+        // struct RES res;
+        //
+        // for (int src = 1; src < size; src++) {
+        //     MPI_Recv(&res, 2, MPI_DOUBLE, src, 1000, MPI_COMM_WORLD, &st);
+        //     global_sum += res.local_sum;
+        //     max=(max>res.local_max)?max:res.local_max;
+        // }
 
         printf("\n rank 0 전체 열 합계 %f\n", global_sum);
         printf(" 전체 max %f\n",max);
     } else {
-        // MPI_Send(&local_sum, 1, MPI_DOUBLE, 0, 100, MPI_COMM_WORLD);
-        // MPI_Send(&max, 1, MPI_DOUBLE, 0, 1000, MPI_COMM_WORLD);
-        struct RES send_res;
-        send_res.local_sum = local_sum;
-        send_res.local_max = max;
-        MPI_Send(&max, 2, MPI_DOUBLE, 0, 1000, MPI_COMM_WORLD);
+        MPI_Send(&local_sum, 1, MPI_DOUBLE, 0, 100, MPI_COMM_WORLD);
+        MPI_Send(&max, 1, MPI_DOUBLE, 0, 1000, MPI_COMM_WORLD);
+        // struct RES send_res;
+        // send_res.local_sum = local_sum;
+        // send_res.local_max = max;
+        // printf("rank %d max %f\n",rank,max);
+        // MPI_Send(&send_res, 2, MPI_DOUBLE, 0, 1000, MPI_COMM_WORLD);
     }
 }
