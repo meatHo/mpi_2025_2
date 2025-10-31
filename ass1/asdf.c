@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
 
     /* PageRank vectors (globally replicated) */
     double *pagerank_global = (double*)malloc(sizeof(double) * P.N);
-    double *pagerank_new_local_chunk = (double*)malloc(sizeof(double) * locN); 
+    double *pagerank_new_local_chunk = (double*)malloc(sizeof(double) * locN);
     /* Local chunk to send with Allgatherv */
 
     /* Initialization: pr = 1/N */
@@ -164,29 +164,25 @@ int main(int argc, char** argv) {
          */
         for (long long i = 0; i < locN; ++i){
             long long u = off + i;
-            double new_pr = (1.0 - d) * one_over_N;
+            double new_pr = 0.0;
 
             if (strcmp(P.gtype, "ring") == 0){
-                long long v = (u - 1 + P.N) % P.N; // 이전 node (ring 에서)
-                new_pr += d * (pagerank_global[v] / outdeg[v]);
+                long long v = (u - 1 + P.N) % P.N;
+                new_pr = (1.0 - d) * one_over_N
+                       + d * (pagerank_global[v] / outdeg[v])
+                       + d * (global_dang_mass / P.N);
             }
-            else if (strcmp(P.gtype, "star") == 0){
-                if (u == 0){
-                    // hub node
-                    double leaf_sum = global_sum - pagerank_global[0];
-                    new_pr += d * (leaf_sum / (P.N - 1));
+            else if (strcmp(P.gtype, "star") == 0) {
+                if (u == 0) {
+                    double hub_gain = global_sum - pagerank_global[0];
+                    double weighted_contrib = d * hub_gain;
+                    new_pr = (1.0 - d) * one_over_N + d * (global_dang_mass / P.N) + weighted_contrib;
                 } else {
-                    // leaf -> hub
-                    new_pr += d * (global_dang_mass / P.N);
+                    // 리프 노드들: 허브로만 보냄 → in-degree 없음
+                    new_pr = (1.0 - d) * one_over_N + d * (global_dang_mass / P.N);
                 }
             }
-            // dangling node mass 보정 (모든 노드에 균등 분배)
-            new_pr += d * (global_dang_mass / P.N);
-
-            // L1 계산
             local_l1_diff += fabs(new_pr - pagerank_global[u]);
-
-            // 새 값 저장 (로컬 벡터)
             pagerank_new_local_chunk[i] = new_pr;
         }
 
@@ -216,7 +212,7 @@ int main(int argc, char** argv) {
         /* Print top-k (for large N, use a top-k selection algorithm) */
         int k = 100;
         // Adjust k if N is smaller than 100
-        if (k > (int)P.N) k = (int)P.N; 
+        if (k > (int)P.N) k = (int)P.N;
 
         int *idx = (int*)malloc(sizeof(int) * P.N);
         for (long long i = 0; i < P.N; i++) idx[i] = (int)i;

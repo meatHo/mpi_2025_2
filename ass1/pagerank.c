@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
         } else {
             for (long long i = 0; i < locN; ++i) {
                 long long cur = off + i;
-                double contrib = (cur == 0) ? (global_sum - pagerank_global[0]) : 0.0; //star 그래프에서는 outdeg=1
+                double contrib = (cur == 0) ? (global_sum - pagerank_global[0]) : 0.0; //star 그래프에서는 outdeg=0
                 //중앙 노드이면 모두가 자신에게 올테니까 전체에서 본인 뺌.
                 //리프 노드이면 들어오는 링크 없으므로 0
 
